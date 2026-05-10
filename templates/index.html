@@ -1,0 +1,1421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CyberShield — Personal Cybersecurity Awareness Tool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&family=Exo+2:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #050a0f;
+    --bg2: #080f17;
+    --surface: #0d1a27;
+    --surface2: #112030;
+    --border: #1a3a5c;
+    --accent: #00d4ff;
+    --accent2: #0066ff;
+    --green: #00ff88;
+    --yellow: #ffcc00;
+    --red: #ff3355;
+    --orange: #ff7700;
+    --text: #c8e0f4;
+    --text-dim: #5a7a9a;
+    --font-mono: 'Share Tech Mono', monospace;
+    --font-display: 'Rajdhani', sans-serif;
+    --font-body: 'Exo 2', sans-serif;
+    --sidebar-w: 260px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    overflow-x: hidden;
+    display: flex;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    pointer-events: none;
+    z-index: 0;
+    animation: orb-drift 12s ease-in-out infinite alternate;
+  }
+  .orb1 { width: 400px; height: 400px; background: rgba(0,100,255,0.08); top: -100px; right: -100px; }
+  .orb2 { width: 300px; height: 300px; background: rgba(0,212,255,0.06); bottom: 100px; left: 200px; animation-delay: -5s; }
+  @keyframes orb-drift { to { transform: translate(30px, 20px); } }
+
+  /* ── OVERLAY ── */
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 99;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .overlay.active { opacity: 1; pointer-events: auto; }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    width: var(--sidebar-w);
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+    overflow-y: auto;
+  }
+  .sidebar.open { transform: translateX(0); }
+
+  @media (min-width: 900px) {
+    .sidebar { transform: translateX(0); }
+    .overlay { display: none !important; }
+    .main-wrap { margin-left: var(--sidebar-w); }
+    .topbar { padding-left: 24px; }
+    .hamburger { display: none; }
+  }
+
+  .sidebar-logo {
+    padding: 24px 20px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .sidebar-logo-icon {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    box-shadow: 0 0 20px rgba(0,212,255,0.3);
+    flex-shrink: 0;
+  }
+  .sidebar-logo-text h2 {
+    font-family: var(--font-display);
+    font-size: 1.2rem; font-weight: 700;
+    letter-spacing: 3px; text-transform: uppercase;
+    color: var(--accent);
+    text-shadow: 0 0 15px rgba(0,212,255,0.4);
+    line-height: 1;
+  }
+  .sidebar-logo-text p {
+    font-family: var(--font-mono);
+    font-size: 0.58rem; color: var(--text-dim);
+    letter-spacing: 1px; margin-top: 3px;
+  }
+
+  /* Status indicator */
+  .sidebar-status {
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px;
+    font-family: var(--font-mono); font-size: 0.7rem; color: var(--green);
+  }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green);
+    box-shadow: 0 0 8px var(--green); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+
+  /* Nav label */
+  .nav-label {
+    padding: 14px 20px 6px;
+    font-family: var(--font-mono); font-size: 0.6rem;
+    letter-spacing: 2px; text-transform: uppercase; color: var(--text-dim);
+  }
+
+  /* Nav items */
+  .nav-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 20px;
+    cursor: pointer;
+    transition: all 0.18s;
+    border-left: 3px solid transparent;
+    position: relative;
+    text-decoration: none;
+    color: var(--text-dim);
+    font-family: var(--font-body);
+  }
+  .nav-item:hover {
+    background: rgba(0,212,255,0.05);
+    color: var(--text);
+    border-left-color: rgba(0,212,255,0.3);
+  }
+  .nav-item.active {
+    background: rgba(0,212,255,0.08);
+    color: var(--accent);
+    border-left-color: var(--accent);
+  }
+  .nav-item.active::after {
+    content: '';
+    position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+    width: 4px; height: 60%; border-radius: 2px 0 0 2px;
+    background: var(--accent);
+    box-shadow: 0 0 10px var(--accent);
+  }
+  .nav-num {
+    width: 26px; height: 26px;
+    border-radius: 6px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono); font-size: 0.65rem;
+    color: inherit;
+    flex-shrink: 0;
+    transition: all 0.18s;
+  }
+  .nav-item.active .nav-num {
+    background: rgba(0,212,255,0.1);
+    border-color: var(--accent);
+  }
+  .nav-icon { font-size: 1rem; }
+  .nav-title {
+    font-size: 0.85rem; font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+  .nav-sub {
+    font-size: 0.65rem; color: var(--text-dim);
+    margin-top: 1px; font-family: var(--font-mono);
+  }
+
+  /* Dashboard nav separator */
+  .nav-divider {
+    margin: 8px 20px;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .nav-item.dashboard-nav {
+    background: linear-gradient(90deg, rgba(0,102,255,0.1), transparent);
+  }
+  .nav-item.dashboard-nav.active {
+    background: linear-gradient(90deg, rgba(0,102,255,0.18), rgba(0,212,255,0.05));
+  }
+
+  /* Sidebar footer */
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+    font-family: var(--font-mono); font-size: 0.6rem;
+    color: var(--text-dim); line-height: 1.6;
+  }
+  .sidebar-footer span { color: var(--accent); }
+
+  /* ── MAIN WRAP ── */
+  .main-wrap {
+    flex: 1;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    position: relative; z-index: 1;
+    transition: margin-left 0.3s;
+  }
+
+  /* ── TOPBAR ── */
+  .topbar {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(5,10,15,0.9);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 60px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .hamburger {
+    width: 38px; height: 38px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 5px;
+    flex-shrink: 0;
+    transition: all 0.2s;
+  }
+  .hamburger:hover { border-color: var(--accent); background: rgba(0,212,255,0.05); }
+  .hamburger span {
+    width: 18px; height: 2px;
+    background: var(--text);
+    border-radius: 1px;
+    transition: all 0.25s;
+    display: block;
+  }
+  .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .hamburger.open span:nth-child(2) { opacity: 0; }
+  .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+  .topbar-breadcrumb {
+    display: flex; align-items: center; gap: 8px;
+    font-family: var(--font-mono); font-size: 0.75rem;
+  }
+  .topbar-breadcrumb .bc-root { color: var(--text-dim); }
+  .topbar-breadcrumb .bc-sep { color: var(--border); }
+  .topbar-breadcrumb .bc-current { color: var(--accent); }
+
+  .topbar-right {
+    margin-left: auto;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .topbar-badge {
+    font-family: var(--font-mono); font-size: 0.65rem;
+    color: var(--text-dim);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 4px 10px; border-radius: 4px;
+  }
+
+  /* ── MAIN CONTENT ── */
+  .main-content {
+    flex: 1;
+    padding: 36px 32px 60px;
+    max-width: 900px;
+    width: 100%;
+    margin: 0 auto;
+  }
+
+  @media (max-width: 640px) {
+    .main-content { padding: 24px 16px 48px; }
+    .topbar { padding: 0 16px; }
+    .topbar-right { display: none; }
+  }
+
+  /* ── PAGE / SECTION SYSTEM ── */
+  .page { display: none; }
+  .page.active { display: block; animation: fadeUp 0.35s ease; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+  /* ── PAGE HEADER ── */
+  .page-header {
+    margin-bottom: 32px;
+  }
+  .page-tag {
+    font-family: var(--font-mono); font-size: 0.68rem;
+    color: var(--accent); letter-spacing: 3px;
+    text-transform: uppercase; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .page-tag::before {
+    content: ''; width: 20px; height: 1px; background: var(--accent);
+  }
+  .page-header h1 {
+    font-family: var(--font-display); font-size: 1.9rem; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase;
+    color: var(--text); line-height: 1.1;
+  }
+  .page-header p {
+    font-size: 0.88rem; color: var(--text-dim);
+    margin-top: 8px; line-height: 1.6;
+  }
+
+  /* ── MODULE CARD ── */
+  .module-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px; overflow: hidden;
+    transition: border-color 0.25s, box-shadow 0.25s;
+  }
+  .module-card:hover { border-color: rgba(0,212,255,0.3); box-shadow: 0 0 25px rgba(0,212,255,0.07); }
+
+  .module-header {
+    padding: 18px 22px;
+    display: flex; align-items: center; gap: 14px;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(90deg, rgba(0,102,255,0.08), transparent);
+  }
+  .module-num {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: var(--bg2); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent); flex-shrink: 0;
+  }
+  .module-title {
+    font-family: var(--font-display); font-size: 1rem; font-weight: 700;
+    letter-spacing: 1.5px; text-transform: uppercase;
+  }
+  .module-endpoint {
+    margin-left: auto; font-family: var(--font-mono); font-size: 0.68rem;
+    color: var(--text-dim); background: var(--bg2); padding: 3px 10px;
+    border-radius: 4px; border: 1px solid var(--border);
+  }
+
+  .module-body { padding: 20px 22px; }
+  .module-footer { padding: 0 22px 20px; }
+
+  /* ── FIELDS ── */
+  .field-group { margin-bottom: 14px; }
+  .field-label {
+    font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-dim);
+    letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; display: block;
+  }
+  .field-input {
+    width: 100%; padding: 10px 14px;
+    background: var(--bg2); border: 1px solid var(--border);
+    color: var(--text); border-radius: 8px;
+    font-family: var(--font-body); font-size: 0.9rem;
+    outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+    resize: vertical;
+  }
+  .field-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,212,255,0.08); }
+  .field-select {
+    width: 100%; padding: 10px 14px;
+    background: var(--bg2); border: 1px solid var(--border);
+    color: var(--text); border-radius: 8px;
+    font-family: var(--font-body); font-size: 0.9rem;
+    outline: none; cursor: pointer;
+  }
+  .field-select option { background: var(--surface); }
+
+  .toggle-group { display: flex; gap: 8px; flex-wrap: wrap; }
+  .toggle-opt {
+    padding: 7px 16px; border-radius: 6px;
+    border: 1px solid var(--border); background: var(--bg2);
+    color: var(--text-dim); font-family: var(--font-mono); font-size: 0.78rem;
+    cursor: pointer; transition: all 0.15s; user-select: none;
+  }
+  .toggle-opt.selected { border-color: var(--accent); color: var(--accent); background: rgba(0,212,255,0.08); }
+
+  /* ── BUTTONS ── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 28px;
+    font-family: var(--font-display); font-weight: 700;
+    font-size: 0.95rem; letter-spacing: 2px; text-transform: uppercase;
+    border: none; border-radius: 8px; cursor: pointer;
+    transition: all 0.2s; position: relative; overflow: hidden;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    color: var(--bg);
+    box-shadow: 0 0 20px rgba(0,212,255,0.25);
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 35px rgba(0,212,255,0.45); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-sm { padding: 9px 20px; font-size: 0.8rem; }
+  .btn-outline {
+    background: transparent; color: var(--accent);
+    border: 1px solid var(--accent);
+  }
+  .btn-outline:hover { background: rgba(0,212,255,0.08); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+
+  .spinner {
+    width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.2);
+    border-top-color: currentColor; border-radius: 50%;
+    animation: spin 0.7s linear infinite; display: none;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── PASSWORD METER ── */
+  .strength-meter { margin-top: 8px; }
+  .strength-bars { display: flex; gap: 4px; margin-bottom: 4px; }
+  .strength-bar {
+    flex: 1; height: 4px; border-radius: 2px; background: var(--border);
+    transition: background 0.3s;
+  }
+
+  /* ── RESULT PANEL ── */
+  .result-panel {
+    background: var(--bg2); border-radius: 10px; padding: 16px;
+    border: 1px solid var(--border); margin-top: 16px;
+    display: none; animation: fadeUp 0.3s ease;
+  }
+  .result-panel.visible { display: block; }
+
+  .result-status-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .result-message { font-size: 0.88rem; color: var(--text); line-height: 1.6; margin-bottom: 10px; }
+
+  .status-badge {
+    display: inline-block;
+    padding: 3px 12px; border-radius: 20px;
+    font-family: var(--font-mono); font-size: 0.78rem; font-weight: bold;
+    letter-spacing: 1px; text-transform: uppercase;
+  }
+  .s-safe, .s-strong, .s-low   { color: var(--green);  background: rgba(0,255,136,0.1);  border: 1px solid rgba(0,255,136,0.3); }
+  .s-medium                     { color: var(--yellow); background: rgba(255,204,0,0.1);   border: 1px solid rgba(255,204,0,0.3); }
+  .s-high, .s-weak              { color: var(--red);    background: rgba(255,51,85,0.1);   border: 1px solid rgba(255,51,85,0.3); }
+  .s-error                      { color: var(--text-dim); background: rgba(90,122,154,0.1); border: 1px solid rgba(90,122,154,0.3); }
+
+  .result-list { list-style: none; }
+  .result-list li {
+    padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-size: 0.82rem; color: var(--text-dim);
+    display: flex; align-items: flex-start; gap: 8px;
+  }
+  .result-list li::before { content: '›'; color: var(--accent); flex-shrink: 0; }
+  .result-list li:last-child { border-bottom: none; }
+
+  .section-label {
+    font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--text-dim); margin: 10px 0 5px;
+  }
+
+  /* ── DASHBOARD ── */
+  .risk-gauge {
+    text-align: center; margin-bottom: 32px;
+    padding: 32px;
+    background: linear-gradient(135deg, rgba(0,102,255,0.1), rgba(0,212,255,0.05));
+    border-radius: 16px;
+    border: 1px solid rgba(0,212,255,0.15);
+    position: relative; overflow: hidden;
+  }
+  .risk-gauge::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(0,212,255,0.04), transparent);
+    animation: shimmer 3s linear infinite;
+  }
+  @keyframes shimmer { from{transform:translateX(-100%)} to{transform:translateX(100%)} }
+
+  .risk-score-big {
+    font-family: var(--font-mono); font-size: 4rem;
+    font-weight: bold; line-height: 1;
+    text-shadow: 0 0 30px currentColor;
+    position: relative;
+  }
+  .risk-label {
+    font-family: var(--font-display); font-size: 1.4rem;
+    letter-spacing: 4px; text-transform: uppercase;
+    font-weight: 700; margin-top: 6px;
+  }
+  .risk-summary { font-size: 0.88rem; color: var(--text-dim); margin-top: 10px; max-width: 500px; margin-inline: auto; line-height: 1.6; }
+
+  .breakdown-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px; margin-top: 24px;
+  }
+  .breakdown-card {
+    background: var(--bg2); border-radius: 10px; padding: 16px;
+    border: 1px solid var(--border);
+    transition: border-color 0.2s;
+  }
+  .breakdown-card:hover { border-color: rgba(0,212,255,0.25); }
+  .breakdown-card .mod-name {
+    font-family: var(--font-display); font-size: 0.78rem; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--text-dim); margin-bottom: 8px;
+  }
+
+  /* Dashboard scan inputs */
+  .dash-scan-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  /* Info box */
+  .info-box {
+    background: rgba(0,102,255,0.06);
+    border: 1px solid rgba(0,102,255,0.2);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+    font-size: 0.82rem;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+  .info-box strong { color: var(--accent); }
+
+  /* Page transition placeholder */
+  .dash-placeholder {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-dim);
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    border: 1px dashed var(--border);
+    border-radius: 16px;
+  }
+  .dash-placeholder .ph-icon { font-size: 3rem; margin-bottom: 12px; opacity: 0.4; }
+
+  /* ── QUICK NAV CARDS (landing) ── */
+  .quick-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+    margin-top: 12px;
+  }
+  .quick-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+  }
+  .quick-card:hover {
+    border-color: rgba(0,212,255,0.35);
+    background: rgba(0,212,255,0.04);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  }
+  .qc-icon { font-size: 1.6rem; margin-bottom: 8px; }
+  .qc-title {
+    font-family: var(--font-display); font-size: 0.9rem;
+    font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+    color: var(--text); margin-bottom: 4px;
+  }
+  .qc-sub { font-family: var(--font-mono); font-size: 0.65rem; color: var(--text-dim); }
+
+  /* ── FOOTER ── */
+  footer {
+    border-top: 1px solid var(--border); padding: 20px 32px;
+    font-family: var(--font-mono); font-size: 0.68rem; color: var(--text-dim);
+    text-align: center;
+    position: relative; z-index: 1;
+  }
+  footer span { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+
+<!-- OVERLAY (mobile) -->
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<!-- ── SIDEBAR ── -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-icon">🛡️</div>
+    <div class="sidebar-logo-text">
+      <h2>CyberShield</h2>
+      <p>CYBERSECURITY TOOL</p>
+    </div>
+  </div>
+
+  <div class="sidebar-status">
+    <span class="dot"></span> SYSTEM ONLINE
+  </div>
+
+  <div class="nav-label">Modules</div>
+
+  <div class="nav-item active" id="nav-footprint" onclick="navigate('footprint')">
+    <div class="nav-num">01</div>
+    <div>
+      <div class="nav-title">🔍 Digital Footprint</div>
+      <div class="nav-sub">Breach Indicator Detector</div>
+    </div>
+  </div>
+
+  <div class="nav-item" id="nav-password" onclick="navigate('password')">
+    <div class="nav-num">02</div>
+    <div>
+      <div class="nav-title">🔐 Password Analyser</div>
+      <div class="nav-sub">5-Rule Strength Scorer</div>
+    </div>
+  </div>
+
+  <div class="nav-item" id="nav-phishing" onclick="navigate('phishing')">
+    <div class="nav-num">03</div>
+    <div>
+      <div class="nav-title">🎣 Phishing Detector</div>
+      <div class="nav-sub">Levenshtein + Heuristics</div>
+    </div>
+  </div>
+
+  <div class="nav-item" id="nav-wifi" onclick="navigate('wifi')">
+    <div class="nav-num">04</div>
+    <div>
+      <div class="nav-title">📡 Wi-Fi Risk</div>
+      <div class="nav-sub">Encryption Assessment</div>
+    </div>
+  </div>
+
+  <div class="nav-divider"></div>
+  <div class="nav-label">Overview</div>
+
+  <div class="nav-item dashboard-nav" id="nav-dashboard" onclick="navigate('dashboard')">
+    <div class="nav-num" style="color:var(--accent2)">⚡</div>
+    <div>
+      <div class="nav-title" style="color:var(--accent)">📊 Dashboard</div>
+      <div class="nav-sub">Full Security Scan</div>
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    <span>CyberShield</span> · BCA Final Year Project<br>
+    Raichur University · <span>2025–26</span>
+  </div>
+</nav>
+
+<!-- ── MAIN WRAP ── -->
+<div class="main-wrap" id="main-wrap">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="hamburger" id="hamburger" onclick="toggleSidebar()">
+      <span></span><span></span><span></span>
+    </div>
+    <div class="topbar-breadcrumb">
+      <span class="bc-root">CyberShield</span>
+      <span class="bc-sep">/</span>
+      <span class="bc-current" id="bc-current">Digital Footprint</span>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-badge">RAICHUR UNIVERSITY · 2025–26</div>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="main-content">
+
+    <!-- ── PAGE: FOOTPRINT ── -->
+    <div class="page active" id="page-footprint">
+      <div class="page-header">
+        <div class="page-tag">Module 01</div>
+        <h1>🔍 Digital Footprint</h1>
+        <p>Scan text for breach indicator keywords — paste any email body, message, or suspicious content to detect potential data leak signals.</p>
+      </div>
+      <div class="module-card">
+        <div class="module-header">
+          <div class="module-num">01</div>
+          <div>
+            <div class="module-title">Leak & Breach Indicator Detector</div>
+            <div style="font-size:0.72rem;color:var(--text-dim);margin-top:2px">14 breach keyword signatures</div>
+          </div>
+          <div class="module-endpoint">LOCAL/footprint</div>
+        </div>
+        <div class="module-body">
+          <div class="info-box">
+            Paste any text — an email, message, or copied content. The analyser checks for <strong>14 breach indicator keywords</strong> such as "pastebin", "dump", "pwned", "darkweb", and more.
+          </div>
+          <div class="field-group">
+            <label class="field-label">Paste Text (email body, message, content)</label>
+            <textarea class="field-input" id="fp-text" rows="5" placeholder="Paste any text you want to check for breach indicators — an email body, copied message, or suspicious content..."></textarea>
+          </div>
+        </div>
+        <div class="module-footer">
+          <button class="btn btn-outline btn-sm" onclick="runFootprint()">
+            <span class="spinner" id="fp-spinner"></span>
+            <span>Analyse Footprint</span>
+          </button>
+          <div class="result-panel" id="fp-result">
+            <div class="result-status-row">
+              <span class="status-badge" id="fp-status-badge">--</span>
+            </div>
+            <div class="result-message" id="fp-message"></div>
+            <div id="fp-keywords-section" style="display:none">
+              <div class="section-label">Matched Breach Keywords</div>
+              <ul class="result-list" id="fp-keywords"></ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PAGE: PASSWORD ── -->
+    <div class="page" id="page-password">
+      <div class="page-header">
+        <div class="page-tag">Module 02</div>
+        <h1>🔐 Password Analyser</h1>
+        <p>Evaluate your password against 5 industry-standard security rules and get a strength score with actionable improvement tips.</p>
+      </div>
+      <div class="module-card">
+        <div class="module-header">
+          <div class="module-num">02</div>
+          <div>
+            <div class="module-title">5-Rule Security Strength Scorer</div>
+            <div style="font-size:0.72rem;color:var(--text-dim);margin-top:2px">Length · Uppercase · Lowercase · Digit · Special</div>
+          </div>
+          <div class="module-endpoint">LOCAL/password</div>
+        </div>
+        <div class="module-body">
+          <div class="info-box">
+            Checks 5 security rules: <strong>8+ characters</strong>, <strong>uppercase</strong>, <strong>lowercase</strong>, <strong>digit</strong>, and <strong>special character</strong>. Password is never sent anywhere — analysed entirely in your browser.
+          </div>
+          <div class="field-group">
+            <label class="field-label">Enter Password</label>
+            <input type="password" class="field-input" id="pw-input" placeholder="Type your password to evaluate..." oninput="updateMeter(this.value)">
+            <div class="strength-meter" id="pw-meter" style="display:none">
+              <div class="strength-bars" id="pw-bars">
+                <div class="strength-bar" id="pwb1"></div>
+                <div class="strength-bar" id="pwb2"></div>
+                <div class="strength-bar" id="pwb3"></div>
+                <div class="strength-bar" id="pwb4"></div>
+                <div class="strength-bar" id="pwb5"></div>
+              </div>
+              <div style="font-family:var(--font-mono);font-size:0.7rem;color:var(--text-dim)" id="pw-score-text">0 / 5 rules passed</div>
+            </div>
+          </div>
+        </div>
+        <div class="module-footer">
+          <button class="btn btn-outline btn-sm" onclick="runPassword()">
+            <span class="spinner" id="pw-spinner"></span>
+            <span>Analyse Password</span>
+          </button>
+          <div class="result-panel" id="pw-result">
+            <div class="result-status-row">
+              <span class="status-badge" id="pw-status-badge">--</span>
+              <span style="font-family:var(--font-mono);font-size:0.78rem;color:var(--text-dim)" id="pw-score-display"></span>
+            </div>
+            <div class="result-message" id="pw-message"></div>
+            <div id="pw-tips-section" style="display:none">
+              <div class="section-label">Improvement Tips</div>
+              <ul class="result-list" id="pw-tips"></ul>
+            </div>
+            <div id="pw-rules-section" style="display:none">
+              <div class="section-label">Rules Passed ✓</div>
+              <ul class="result-list" id="pw-rules"></ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PAGE: PHISHING ── -->
+    <div class="page" id="page-phishing">
+      <div class="page-header">
+        <div class="page-tag">Module 03</div>
+        <h1>🎣 Phishing Detector</h1>
+        <p>Multi-signal heuristic analysis with a custom Levenshtein edit-distance algorithm to detect lookalike domains and suspicious URLs.</p>
+      </div>
+      <div class="module-card">
+        <div class="module-header">
+          <div class="module-num">03</div>
+          <div>
+            <div class="module-title">Levenshtein + Multi-Signal Heuristics</div>
+            <div style="font-size:0.72rem;color:var(--text-dim);margin-top:2px">9 signals · Lookalike domains · TLD risk · IP detection</div>
+          </div>
+          <div class="module-endpoint">LOCAL/phishing</div>
+        </div>
+        <div class="module-body">
+          <div class="info-box">
+            Checks 9 phishing signals: <strong>HTTPS</strong>, suspicious keywords, <strong>high-risk TLD</strong>, IP-based URL, subdomain depth, <strong>lookalike domain</strong> (Levenshtein ≤ 2), @ trick, Punycode, and URL length.
+          </div>
+          <div class="field-group">
+            <label class="field-label">URL to Analyse</label>
+            <input type="text" class="field-input" id="ph-url" placeholder="https://paypa1.com/login/verify?account=...">
+          </div>
+        </div>
+        <div class="module-footer">
+          <button class="btn btn-outline btn-sm" onclick="runPhishing()">
+            <span class="spinner" id="ph-spinner"></span>
+            <span>Analyse URL</span>
+          </button>
+          <div class="result-panel" id="ph-result">
+            <div class="result-status-row">
+              <span class="status-badge" id="ph-status-badge">--</span>
+              <span style="font-family:var(--font-mono);font-size:0.78rem;color:var(--text-dim)" id="ph-score-display"></span>
+            </div>
+            <div class="result-message" id="ph-message"></div>
+            <div id="ph-flags-section" style="display:none">
+              <div class="section-label">🚩 Risk Signals Detected</div>
+              <ul class="result-list" id="ph-flags"></ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PAGE: WIFI ── -->
+    <div class="page" id="page-wifi">
+      <div class="page-header">
+        <div class="page-tag">Module 04</div>
+        <h1>📡 Wi-Fi Risk Indicator</h1>
+        <p>Assess the security of your Wi-Fi network based on encryption type and whether it's a public or private network.</p>
+      </div>
+      <div class="module-card">
+        <div class="module-header">
+          <div class="module-num">04</div>
+          <div>
+            <div class="module-title">Encryption + Public Network Assessment</div>
+            <div style="font-size:0.72rem;color:var(--text-dim);margin-top:2px">OPEN · WEP · WPA · WPA2 · WPA3</div>
+          </div>
+          <div class="module-endpoint">LOCAL/wifi</div>
+        </div>
+        <div class="module-body">
+          <div class="info-box">
+            Scores encryption strength (WPA3=0 risk → OPEN=3 risk) and adds a <strong>public network penalty</strong>. Detects MITM risk, evil twin hotspot, and captive portal exposure.
+          </div>
+          <div class="field-group">
+            <label class="field-label">Network Name (SSID) — optional</label>
+            <input type="text" class="field-input" id="wf-ssid" placeholder="e.g. Airport_FreeWiFi">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Encryption Type</label>
+            <select class="field-select" id="wf-enc">
+              <option value="OPEN">OPEN — No password</option>
+              <option value="WEP">WEP — Legacy (broken)</option>
+              <option value="WPA">WPA — Outdated</option>
+              <option value="WPA2" selected>WPA2 — Common Standard</option>
+              <option value="WPA3">WPA3 — Latest & Secure</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Network Type</label>
+            <div class="toggle-group">
+              <div class="toggle-opt selected" id="wf-public-btn" onclick="setWifiPublic(true)">📶 Public Network</div>
+              <div class="toggle-opt" id="wf-private-btn" onclick="setWifiPublic(false)">🏠 Private / Home</div>
+            </div>
+          </div>
+        </div>
+        <div class="module-footer">
+          <button class="btn btn-outline btn-sm" onclick="runWifi()">
+            <span class="spinner" id="wf-spinner"></span>
+            <span>Assess Wi-Fi Risk</span>
+          </button>
+          <div class="result-panel" id="wf-result">
+            <div class="result-status-row">
+              <span class="status-badge" id="wf-status-badge">--</span>
+              <span style="font-family:var(--font-mono);font-size:0.78rem;color:var(--text-dim)" id="wf-enc-display"></span>
+            </div>
+            <div class="result-message" id="wf-message"></div>
+            <div id="wf-flags-section" style="display:none">
+              <div class="section-label">⚠️ Risk Flags</div>
+              <ul class="result-list" id="wf-flags"></ul>
+            </div>
+            <div id="wf-tips-section" style="display:none">
+              <div class="section-label">💡 Recommendations</div>
+              <ul class="result-list" id="wf-tips"></ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PAGE: DASHBOARD ── -->
+    <div class="page" id="page-dashboard">
+      <div class="page-header">
+        <div class="page-tag">Full Security Scan</div>
+        <h1>⚡ Dashboard</h1>
+        <p>Run all four modules simultaneously and get your aggregate Cyber Risk Score in one click.</p>
+      </div>
+
+      <div class="module-card" style="margin-bottom: 24px;">
+        <div class="module-header">
+          <div class="module-num" style="color:var(--accent2)">⚡</div>
+          <div>
+            <div class="module-title">Full Security Scan — All Modules</div>
+            <div style="font-size:0.72rem;color:var(--text-dim);margin-top:2px">Risk score out of 8 · Weighted across 4 modules</div>
+          </div>
+        </div>
+        <div class="module-body">
+          <div class="dash-scan-grid">
+            <div class="field-group" style="margin:0">
+              <label class="field-label">Paste any text</label>
+              <input type="text" class="field-input" id="sa-text" placeholder="Email body, message...">
+            </div>
+            <div class="field-group" style="margin:0">
+              <label class="field-label">Password</label>
+              <input type="password" class="field-input" id="sa-password" placeholder="Your password">
+            </div>
+            <div class="field-group" style="margin:0">
+              <label class="field-label">URL to check</label>
+              <input type="text" class="field-input" id="sa-url" placeholder="https://example.com">
+            </div>
+            <div class="field-group" style="margin:0">
+              <label class="field-label">Wi-Fi Encryption</label>
+              <select class="field-select" id="sa-encryption">
+                <option value="OPEN">OPEN (no password)</option>
+                <option value="WEP">WEP</option>
+                <option value="WPA">WPA</option>
+                <option value="WPA2" selected>WPA2</option>
+                <option value="WPA3">WPA3</option>
+              </select>
+            </div>
+            <div class="field-group" style="margin:0">
+              <label class="field-label">Network Type</label>
+              <select class="field-select" id="sa-public">
+                <option value="true">Public Network</option>
+                <option value="false">Private/Home Network</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="module-footer">
+          <button class="btn btn-primary" onclick="runScanAll()" id="scan-all-btn">
+            <span class="spinner" id="scan-all-spinner"></span>
+            <span>🔍 Run Full Scan</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Dashboard result -->
+      <div id="dash-result-wrap" style="display:none; animation: fadeUp 0.4s ease;">
+        <div class="risk-gauge">
+          <div class="risk-score-big" id="dash-score" style="color:var(--accent)">--</div>
+          <div class="risk-label" id="dash-label" style="color:var(--accent)">SCANNING...</div>
+          <div class="risk-summary" id="dash-summary"></div>
+        </div>
+        <div class="breakdown-grid" id="dash-breakdown"></div>
+      </div>
+
+      <div class="dash-placeholder" id="dash-placeholder">
+        <div class="ph-icon">📊</div>
+        Fill in the fields above and run the full scan to see your aggregate security score across all four modules.
+      </div>
+    </div>
+
+  </div><!-- /main-content -->
+
+  <footer>
+    <span>CyberShield</span> · BCA Final Year Project ·
+    Government Degree College, Sindhanur, Karnataka  ·
+    Academic Year <span>2025–26</span>
+  </footer>
+
+</div><!-- /main-wrap -->
+
+<script>
+// ══════════════════════════════════════════════
+//  NAVIGATION
+// ══════════════════════════════════════════════
+const pages = ['footprint','password','phishing','wifi','dashboard'];
+const labels = {
+  footprint: 'Digital Footprint',
+  password:  'Password Analyser',
+  phishing:  'Phishing Detector',
+  wifi:      'Wi-Fi Risk Indicator',
+  dashboard: 'Dashboard'
+};
+
+let currentPage = 'footprint';
+
+function navigate(page) {
+  // Deactivate all
+  pages.forEach(p => {
+    document.getElementById('page-'+p).classList.remove('active');
+    document.getElementById('nav-'+p).classList.remove('active');
+  });
+  // Activate target
+  document.getElementById('page-'+page).classList.add('active');
+  document.getElementById('nav-'+page).classList.add('active');
+  document.getElementById('bc-current').textContent = labels[page];
+  currentPage = page;
+  // Close sidebar on mobile
+  if (window.innerWidth < 900) closeSidebar();
+  // Scroll to top
+  document.querySelector('.main-content').scrollTop = 0;
+  window.scrollTo(0, 0);
+}
+
+// ══════════════════════════════════════════════
+//  SIDEBAR TOGGLE
+// ══════════════════════════════════════════════
+let sidebarOpen = false;
+
+function toggleSidebar() {
+  sidebarOpen ? closeSidebar() : openSidebar();
+}
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('overlay').classList.add('active');
+  document.getElementById('hamburger').classList.add('open');
+  sidebarOpen = true;
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('active');
+  document.getElementById('hamburger').classList.remove('open');
+  sidebarOpen = false;
+}
+
+// ══════════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════════
+let wifiIsPublic = true;
+
+function setWifiPublic(val) {
+  wifiIsPublic = val;
+  document.getElementById('wf-public-btn').classList.toggle('selected', val);
+  document.getElementById('wf-private-btn').classList.toggle('selected', !val);
+}
+
+function statusClass(s) {
+  const m = { SAFE:'s-safe', STRONG:'s-strong', LOW:'s-low', MEDIUM:'s-medium',
+              HIGH:'s-high', WEAK:'s-weak', ERROR:'s-error' };
+  return m[s] || 's-error';
+}
+
+function setSpinner(id, on) {
+  document.getElementById(id).style.display = on ? 'block' : 'none';
+}
+
+function makeList(el, items) {
+  el.innerHTML = '';
+  (items || []).forEach(i => {
+    const li = document.createElement('li');
+    li.textContent = i;
+    el.appendChild(li);
+  });
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ══════════════════════════════════════════════
+//  MODULE 1: DIGITAL FOOTPRINT (JS port)
+// ══════════════════════════════════════════════
+const BREACH_KEYWORDS = [
+  "pastebin","leak","dump","breach","hacked","exposed","darkweb",
+  "dark web","data breach","credential","pwned","compromised",
+  "stolen","harvested","exfiltrated"
+];
+
+function checkFootprint(text) {
+  if (!text || !text.trim()) {
+    return { status:'ERROR', matched_keywords:[], message:'No text provided for analysis.' };
+  }
+  const norm = text.toLowerCase();
+  const matched = BREACH_KEYWORDS.filter(kw => norm.includes(kw));
+  if (matched.length) {
+    return {
+      status: 'HIGH',
+      matched_keywords: matched,
+      message: `⚠️ High risk! Your text contains ${matched.length} breach indicator(s): ${matched.join(', ')}. This content may be associated with a data leak or breach. Change affected passwords immediately and check haveibeenpwned.com.`
+    };
+  }
+  return {
+    status: 'SAFE',
+    matched_keywords: [],
+    message: '✅ No breach indicators detected in the provided text. Your digital footprint looks clean.'
+  };
+}
+
+async function runFootprint() {
+  const text = document.getElementById('fp-text').value;
+  if (!text.trim()) { alert('Please paste some text to analyse.'); return; }
+  setSpinner('fp-spinner', true);
+  await sleep(400);
+  try {
+    const r = checkFootprint(text);
+    const panel = document.getElementById('fp-result');
+    const badge = document.getElementById('fp-status-badge');
+    badge.textContent = r.status;
+    badge.className = 'status-badge ' + statusClass(r.status);
+    document.getElementById('fp-message').textContent = r.message;
+    if (r.matched_keywords && r.matched_keywords.length) {
+      document.getElementById('fp-keywords-section').style.display = 'block';
+      makeList(document.getElementById('fp-keywords'), r.matched_keywords);
+    } else {
+      document.getElementById('fp-keywords-section').style.display = 'none';
+    }
+    panel.classList.add('visible');
+  } finally { setSpinner('fp-spinner', false); }
+}
+
+// ══════════════════════════════════════════════
+//  MODULE 2: PASSWORD ANALYSER (JS port)
+// ══════════════════════════════════════════════
+const PW_RULES = [
+  { id:'length',    desc:'At least 8 characters long',                     test: p => p.length >= 8,                    tip:'Use at least 8 characters. Consider a passphrase like \'Coffee@Morning!2024\'.' },
+  { id:'uppercase', desc:'Contains at least one uppercase letter (A–Z)',   test: p => /[A-Z]/.test(p),                  tip:'Add at least one UPPERCASE letter (e.g., A, B, C...).' },
+  { id:'lowercase', desc:'Contains at least one lowercase letter (a–z)',   test: p => /[a-z]/.test(p),                  tip:'Add at least one lowercase letter (e.g., a, b, c...).' },
+  { id:'digit',     desc:'Contains at least one numeric digit (0–9)',      test: p => /[0-9]/.test(p),                  tip:'Include at least one number (0–9) in your password.' },
+  { id:'special',   desc:'Contains at least one special character (!@#...)', test: p => /[!@#$%^&*()\-_=+\[\]{};':"\\|,.<>\/?`~]/.test(p), tip:'Add a special character like !, @, #, $, %, ^, &, or *.' }
+];
+
+function analysePassword(password) {
+  if (!password) return { status:'ERROR', score:0, max_score:5, rules_passed:[], tips:[], message:'No password provided.' };
+  let score = 0; const tips = []; const rules_passed = [];
+  for (const rule of PW_RULES) {
+    if (rule.test(password)) { score++; rules_passed.push(rule.desc); }
+    else { tips.push(rule.tip); }
+  }
+  let status, message;
+  if (score <= 2) { status='WEAK'; message='❌ Weak password. This password can be cracked almost instantly. Apply the improvement tips below.'; }
+  else if (score <= 4) { status='MEDIUM'; message='⚠️ Medium-strength password. Good start, but it can still be improved. Follow the remaining tips.'; }
+  else { status='STRONG'; message='✅ Strong password! Your password meets all 5 security criteria. Great job staying secure.'; }
+  return { status, score, max_score:5, rules_passed, tips, message };
+}
+
+function updateMeter(val) {
+  if (!val) { document.getElementById('pw-meter').style.display = 'none'; return; }
+  document.getElementById('pw-meter').style.display = 'block';
+  const score = PW_RULES.filter(r => r.test(val)).length;
+  const colors = ['var(--red)','var(--red)','var(--orange)','var(--yellow)','var(--green)','var(--green)'];
+  for (let i = 1; i <= 5; i++) {
+    document.getElementById('pwb'+i).style.background = i <= score ? colors[score] : 'var(--border)';
+  }
+  document.getElementById('pw-score-text').textContent = score + ' / 5 rules passed';
+}
+
+async function runPassword() {
+  const pw = document.getElementById('pw-input').value;
+  if (!pw) { alert('Please enter a password.'); return; }
+  setSpinner('pw-spinner', true);
+  await sleep(350);
+  try {
+    const r = analysePassword(pw);
+    const badge = document.getElementById('pw-status-badge');
+    badge.textContent = r.status;
+    badge.className = 'status-badge ' + statusClass(r.status);
+    document.getElementById('pw-score-display').textContent = `Score: ${r.score}/${r.max_score}`;
+    document.getElementById('pw-message').textContent = r.message;
+    if (r.tips && r.tips.length) {
+      document.getElementById('pw-tips-section').style.display = 'block';
+      makeList(document.getElementById('pw-tips'), r.tips);
+    } else { document.getElementById('pw-tips-section').style.display = 'none'; }
+    if (r.rules_passed && r.rules_passed.length) {
+      document.getElementById('pw-rules-section').style.display = 'block';
+      makeList(document.getElementById('pw-rules'), r.rules_passed);
+    } else { document.getElementById('pw-rules-section').style.display = 'none'; }
+    document.getElementById('pw-result').classList.add('visible');
+  } finally { setSpinner('pw-spinner', false); }
+}
+
+// ══════════════════════════════════════════════
+//  MODULE 3: PHISHING DETECTOR (JS port)
+// ══════════════════════════════════════════════
+const KNOWN_LEGIT = ["google.com","paypal.com","amazon.com","facebook.com","microsoft.com","apple.com","netflix.com","instagram.com","twitter.com","linkedin.com","sbi.co.in","hdfcbank.com","icicibank.com","flipkart.com","paytm.com"];
+const SUSP_KW = ["login","verify","urgent","confirm","update","secure","account","bank","password","credentials","suspended","blocked","alert","warning","limited","validate","signin"];
+const HIGH_RISK_TLDS = [".xyz",".tk",".ml",".cf",".gq",".pw",".top",".click",".download",".link",".online",".site"];
+
+function levenshtein(s1, s2) {
+  if (s1.length < s2.length) return levenshtein(s2, s1);
+  if (s2.length === 0) return s1.length;
+  let prev = Array.from({length: s2.length+1}, (_,i) => i);
+  for (let i = 0; i < s1.length; i++) {
+    const cur = [i+1];
+    for (let j = 0; j < s2.length; j++) {
+      cur.push(Math.min(prev[j+1]+1, cur[j]+1, prev[j]+(s1[i]!==s2[j]?1:0)));
+    }
+    prev = cur;
+  }
+  return prev[s2.length];
+}
+
+function analysePhishing(rawUrl) {
+  if (!rawUrl || !rawUrl.trim()) return { status:'ERROR', score:0, flags:[], message:'No URL provided.' };
+  let url = rawUrl.trim();
+  if (!url.startsWith('http://') && !url.startsWith('https://')) url = 'http://' + url;
+
+  const flags = []; let score = 0;
+  try {
+    const parsed = new URL(url);
+    const hostname = parsed.hostname || '';
+    const full = url.toLowerCase();
+
+    // Signal 1: No HTTPS
+    if (parsed.protocol === 'http:') { flags.push('No HTTPS — connection is not encrypted (plaintext risk)'); score += 2; }
+
+    // Signal 2: Suspicious keywords
+    const kwFound = SUSP_KW.filter(kw => full.includes(kw));
+    if (kwFound.length) { flags.push(`Suspicious keywords detected: ${kwFound.join(', ')}`); score += kwFound.length; }
+
+    // Signal 3: High-risk TLD
+    const riskyTld = HIGH_RISK_TLDS.find(tld => hostname.endsWith(tld));
+    if (riskyTld) { flags.push(`High-risk TLD detected: ${riskyTld}`); score += 2; }
+
+    // Signal 4: IP-based URL
+    if (/^\d{1,3}(\.\d{1,3}){3}$/.test(hostname)) { flags.push('IP-based URL — legitimate sites use domain names, not raw IPs'); score += 3; }
+
+    // Signal 5: Excessive subdomains
+    const parts = hostname.split('.');
+    if (parts.length > 3) { flags.push(`Excessive subdomain depth (${parts.length} levels) — common obfuscation trick`); score += 1; }
+
+    // Signal 6: Lookalike domain
+    const baseDomain = parts.length >= 2 ? parts.slice(-2).join('.') : hostname;
+    for (const legit of KNOWN_LEGIT) {
+      const dist = levenshtein(baseDomain.toLowerCase(), legit.toLowerCase());
+      if (dist > 0 && dist <= 2) {
+        flags.push(`Lookalike domain! '${baseDomain}' is suspiciously similar to '${legit}' (edit distance: ${dist})`);
+        score += 3; break;
+      }
+    }
+
+    // Signal 7: @ in URL
+    if (url.includes('@')) { flags.push("'@' symbol in URL — used to redirect to a different host (redirection trick)"); score += 2; }
+
+    // Signal 8: Punycode
+    if (hostname.includes('xn--')) { flags.push('Punycode domain (xn--) detected — internationalized character spoofing attempt'); score += 2; }
+
+    // Signal 9: Long URL
+    if (url.length > 100) { flags.push(`URL is very long (${url.length} chars) — often used to hide the real destination`); score += 1; }
+
+  } catch(e) {
+    return { status:'ERROR', score:0, flags:[`Could not parse URL: ${e.message}`], message:'Invalid URL format.' };
+  }
+
+  let status, message;
+  if (score <= 1) { status='SAFE'; message='✅ URL appears safe. No significant phishing signals detected.'; }
+  else if (score <= 3) { status='MEDIUM'; message=`⚠️ Suspicious URL. ${flags.length} risk signal(s) detected. Proceed with caution.`; }
+  else { status='HIGH'; message=`🚨 High phishing risk! ${flags.length} danger signal(s) detected. Do NOT visit this URL.`; }
+  return { status, score, flags, message };
+}
+
+async function runPhishing() {
+  const url = document.getElementById('ph-url').value;
+  if (!url.trim()) { alert('Please enter a URL.'); return; }
+  setSpinner('ph-spinner', true);
+  await sleep(400);
+  try {
+    const r = analysePhishing(url);
+    const badge = document.getElementById('ph-status-badge');
+    badge.textContent = r.status;
+    badge.className = 'status-badge ' + statusClass(r.status);
+    document.getElementById('ph-score-display').textContent = `Risk Score: ${r.score}`;
+    document.getElementById('ph-message').textContent = r.message;
+    if (r.flags && r.flags.length) {
+      document.getElementById('ph-flags-section').style.display = 'block';
+      makeList(document.getElementById('ph-flags'), r.flags);
+    } else { document.getElementById('ph-flags-section').style.display = 'none'; }
+    document.getElementById('ph-result').classList.add('visible');
+  } finally { setSpinner('ph-spinner', false); }
+}
+
+// ══════════════════════════════════════════════
+//  MODULE 4: WI-FI RISK (JS port)
+// ══════════════════════════════════════════════
+const ENC_SCORES = { OPEN:3, WEP:2, WPA:1, WPA2:1, WPA3:0 };
+const ENC_INFO = {
+  OPEN:  'No encryption — all traffic is visible to anyone on the same network.',
+  WEP:   'WEP is broken and can be cracked in under 60 seconds with free tools.',
+  WPA:   'WPA has known vulnerabilities and is considered outdated.',
+  WPA2:  'WPA2 is standard but vulnerable to KRACK attacks on public networks.',
+  WPA3:  'WPA3 is the most secure modern Wi-Fi standard. Good choice.'
+};
+
+function assessWifi(encryption, is_public, ssid='') {
+  encryption = (encryption || 'OPEN').toUpperCase().trim();
+  if (!(encryption in ENC_SCORES)) return { status:'ERROR', score:0, encryption, flags:[], tips:[], message:`Unknown encryption type: '${encryption}'.` };
+
+  let score = ENC_SCORES[encryption];
+  const flags = [], tips = [];
+
+  if (is_public) { score += 1; flags.push('Public network — shared with unknown users and potentially monitored'); }
+  if (is_public && (encryption==='OPEN'||encryption==='WPA2')) { flags.push('Evil twin hotspot risk — an attacker may create a fake access point with the same name'); tips.push('Verify the exact network name (SSID) with staff before connecting'); }
+  if (is_public && encryption==='OPEN') { flags.push('Captive portal likely — your device will auto-connect and expose your MAC address'); }
+  if (encryption==='OPEN') { flags.push('MITM (Man-in-the-Middle) attack risk — attacker can intercept all unencrypted traffic'); tips.push('Never use this network for banking, email, or any sensitive login'); tips.push('Use your mobile data hotspot instead of this open network'); }
+  if (encryption==='WEP'||encryption==='WPA') { flags.push(`Outdated encryption (${encryption}) — upgrade to WPA2 or WPA3 if possible`); }
+  if (is_public) { tips.push('Always use a trusted VPN when connecting to any public Wi-Fi network'); tips.push('Avoid accessing banking, email, or work accounts on public Wi-Fi'); tips.push('Enable \'Forget Network\' after use to prevent auto-reconnect'); }
+  if (encryption==='WPA3') { tips.push('WPA3 is the safest option. Your encryption is up to date.'); }
+
+  let status, message;
+  if (score===0) { status='SAFE'; message='✅ Low risk. WPA3 private network — excellent security posture.'; }
+  else if (score<=2) { status='MEDIUM'; message=`⚠️ Moderate risk. ${flags.length} concern(s) detected. Take precautions before transmitting sensitive data.`; }
+  else { status='HIGH'; message=`🚨 High risk! ${flags.length} serious risk(s) detected. Avoid sensitive activities on this network.`; }
+
+  return { status, score, encryption, encryption_info: ENC_INFO[encryption]||'', flags, tips, message };
+}
+
+async function runWifi() {
+  const enc = document.getElementById('wf-enc').value;
+  const ssid = document.getElementById('wf-ssid').value;
+  setSpinner('wf-spinner', true);
+  await sleep(350);
+  try {
+    const r = assessWifi(enc, wifiIsPublic, ssid);
+    const badge = document.getElementById('wf-status-badge');
+    badge.textContent = r.status;
+    badge.className = 'status-badge ' + statusClass(r.status);
+    document.getElementById('wf-enc-display').textContent = `Encryption: ${r.encryption}`;
+    document.getElementById('wf-message').textContent = r.message;
+    if (r.flags && r.flags.length) {
+      document.getElementById('wf-flags-section').style.display = 'block';
+      makeList(document.getElementById('wf-flags'), r.flags);
+    } else { document.getElementById('wf-flags-section').style.display = 'none'; }
+    if (r.tips && r.tips.length) {
+      document.getElementById('wf-tips-section').style.display = 'block';
+      makeList(document.getElementById('wf-tips'), r.tips);
+    } else { document.getElementById('wf-tips-section').style.display = 'none'; }
+    document.getElementById('wf-result').classList.add('visible');
+  } finally { setSpinner('wf-spinner', false); }
+}
+
+// ══════════════════════════════════════════════
+//  DASHBOARD: FULL SCAN (JS port)
+// ══════════════════════════════════════════════
+const STATUS_WEIGHT = { HIGH:2, WEAK:2, MEDIUM:1, LOW:0, SAFE:0, STRONG:0, ERROR:0 };
+
+function buildDashboard(fpR, pwR, phR, wfR) {
+  const results = { footprint:fpR, password:pwR, phishing:phR, wifi:wfR };
+  let total = 0;
+  const breakdown = {};
+  for (const [mod, res] of Object.entries(results)) {
+    const status = res.status || 'ERROR';
+    const weight = STATUS_WEIGHT[status] || 0;
+    total += weight;
+    breakdown[mod] = { status, weight, message: res.message || '' };
+  }
+  const MAX = 8;
+  const pct = (total / MAX) * 100;
+  let overall_status, summary;
+  if (total===0) { overall_status='SAFE'; summary='🛡️ Excellent! Your digital security posture is strong across all four dimensions. Keep it up!'; }
+  else if (pct<=40) { overall_status='LOW'; summary='✅ Low overall risk. A few minor issues were detected. Review the flagged modules and apply the suggested improvements.'; }
+  else if (pct<=70) { overall_status='MEDIUM'; summary='⚠️ Moderate risk detected across your security profile. Several areas need attention — please review each module\'s recommendations.'; }
+  else { overall_status='HIGH'; summary='🚨 High overall cyber risk! Multiple serious vulnerabilities detected. Take immediate action on all flagged modules.'; }
+  return { overall_status, summary, score:total, max_score:MAX, percentage:Math.round(pct*10)/10, breakdown };
+}
+
+async function runScanAll() {
+  const btn = document.getElementById('scan-all-btn');
+  setSpinner('scan-all-spinner', true);
+  btn.disabled = true;
+  document.getElementById('dash-result-wrap').style.display = 'none';
+  document.getElementById('dash-placeholder').style.display = 'none';
+  await sleep(600);
+  try {
+    const text = document.getElementById('sa-text').value;
+    const pw   = document.getElementById('sa-password').value;
+    const url  = document.getElementById('sa-url').value;
+    const enc  = document.getElementById('sa-encryption').value;
+    const pub  = document.getElementById('sa-public').value === 'true';
+
+    const fpR = checkFootprint(text);
+    const pwR = analysePassword(pw);
+    const phR = analysePhishing(url);
+    const wfR = assessWifi(enc, pub);
+
+    const d = buildDashboard(fpR, pwR, phR, wfR);
+
+    // Score display
+    const pct = d.percentage;
+    const color = pct <= 40 ? 'var(--green)' : pct <= 70 ? 'var(--yellow)' : 'var(--red)';
+
+    const scoreEl = document.getElementById('dash-score');
+    scoreEl.textContent = d.score + ' / ' + d.max_score;
+    scoreEl.style.color = color;
+
+    const labelEl = document.getElementById('dash-label');
+    labelEl.textContent = d.overall_status;
+    labelEl.style.color = color;
+
+    document.getElementById('dash-summary').textContent = d.summary;
+
+    const grid = document.getElementById('dash-breakdown');
+    grid.innerHTML = '';
+    const icons = { footprint:'🔍', password:'🔐', phishing:'🎣', wifi:'📡' };
+    const names = { footprint:'Footprint', password:'Password', phishing:'Phishing', wifi:'Wi-Fi' };
+    for (const [mod, info] of Object.entries(d.breakdown)) {
+      const card = document.createElement('div');
+      card.className = 'breakdown-card';
+      const snippet = info.message.replace(/^[🛡️✅⚠️🚨❌]+\s*/,'').substring(0,90);
+      card.innerHTML = `
+        <div class="mod-name">${icons[mod]||''} ${names[mod]||mod}</div>
+        <span class="status-badge ${statusClass(info.status)}">${info.status}</span>
+        <div style="font-size:0.78rem;color:var(--text-dim);margin-top:8px;line-height:1.5">${snippet}${info.message.length>90?'…':''}</div>
+      `;
+      grid.appendChild(card);
+    }
+
+    document.getElementById('dash-result-wrap').style.display = 'block';
+    document.getElementById('dash-result-wrap').scrollIntoView({ behavior:'smooth', block:'nearest' });
+  } finally {
+    setSpinner('scan-all-spinner', false);
+    btn.disabled = false;
+  }
+}
+</script>
+</body>
+</html>
