@@ -1,6 +1,6 @@
 """
 CyberShield — Flask REST API Server
-BCA Final Year Project | Vijayanagara Sri Krishnadevaraya University College
+BCA Final Year Project |Government Degree College, Sindhanur
 """
 
 from flask import Flask, request, jsonify, render_template
