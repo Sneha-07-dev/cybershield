@@ -1,6 +1,6 @@
 # 🛡️ CyberShield — Personal Cybersecurity Awareness Tool
 
-**BCA Final Year Project | Vijayanagara Sri Krishnadevaraya University College, Hospet**
+**BCA Final Year Project | Government Degree College Sindhanur**
 **Academic Year 2025–26**
 
 ---
@@ -135,4 +135,4 @@ All user input is processed **in-memory only**. Nothing is stored, logged, or tr
 
 ---
 
-*CyberShield — BCA Final Year Project | VSK University College, Hospet, Karnataka | 2025–26*
+*CyberShield — BCA Final Year Project | Raichur University , Sindhanur, Karnataka | 2025–26*
