@@ -110,4 +110,8 @@ if __name__ == "__main__":
     print("  Server: http://localhost:5000")
     print("  API:    http://localhost:5000/api/ping")
     print("=" * 55)
-    app.run(debug=True, port=5000)
+   import os
+
+port = int(os.environ.get("PORT", 10000))
+
+app.run(host="0.0.0.0", port=port)
