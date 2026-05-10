@@ -103,15 +103,13 @@ def index():
 
 
 if __name__ == "__main__":
+    import os
+
+    port = int(os.environ.get("PORT", 10000))
+
     print("=" * 55)
     print("  🛡️  CyberShield — Personal Cybersecurity Tool")
-    print("  BCA Final Year Project | VSK University")
+    print("  BCA Final Year Project | Raichur University")
     print("=" * 55)
-    print("  Server: http://localhost:5000")
-    print("  API:    http://localhost:5000/api/ping")
-    print("=" * 55)
-   import os
 
-port = int(os.environ.get("PORT", 10000))
-
-app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=port)
