@@ -108,7 +108,7 @@ if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
 
     print("=" * 55)
-    print("  🛡️  Cyber — Personal Cybersecurity Tool")
+    print("  🛡️   — Personal Cybersecurity Tool")
     print("  BCA Final Year Project | Raichur University")
     print("=" * 55)
 
